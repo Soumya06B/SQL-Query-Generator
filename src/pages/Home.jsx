@@ -7,7 +7,7 @@ import { QueryInput } from "../components/QueryInput";
 import { QueryResults } from "../components/QueryResults";
 import api from "../services/api";
 
-export function Home() {
+export function Home({ dbType = 'postgres' }) {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [activeResult, setActiveResult] = useState(null);
@@ -40,26 +40,26 @@ export function Home() {
     
     try {
       // 1. Generate SQL
-      const genResponse = await api.generateSql(prompt);
+      const genResponse = await api.generateSql(prompt, dbType);
       const generatedSql = genResponse.sql;
       const alternatives = genResponse.alternatives || [];
       
       // 2. Validate SQL
-      const valResponse = await api.validateQuery(generatedSql);
+      const valResponse = await api.validateQuery(generatedSql, dbType);
       if (!valResponse.is_valid) {
         console.warn("Validation Failed: ", valResponse.errors);
       }
 
       // 3. Explain and Analyze Impact (Parallel)
       const [explainRes, impactRes] = await Promise.all([
-        api.explainQuery(generatedSql),
-        api.analyzeImpact(generatedSql)
+        api.explainQuery(generatedSql, dbType),
+        api.analyzeImpact(generatedSql, dbType)
       ]);
 
       const newResult = {
         sql: generatedSql,
         explanation: explainRes.explanation,
-        tables: ["users", "orders"], // Could be parsed from SQL in a real app
+        tables: genResponse.tables || [],
         impact: {
           cost: impactRes.cost_estimate,
           rows: impactRes.estimated_rows,
@@ -76,10 +76,13 @@ export function Home() {
         setSelectedAlternativeId(alternatives[0].id);
       }
 
-      setHistory(prev => [
-        { id: Date.now(), prompt, generated_sql: generatedSql },
-        ...prev
-      ]);
+      // Sync history with backend
+      try {
+        const freshHistory = await api.getHistory(0, 20);
+        setHistory(freshHistory);
+      } catch (err) {
+        console.error("Failed to sync history after generation:", err);
+      }
 
     } catch (err) {
       console.error(err);
@@ -137,6 +140,7 @@ export function Home() {
                   activeAlternatives.find(a => a.id === selectedAlternativeId)?.sql || 
                   activeResult.sql
                 } 
+                dbType={dbType}
               />
             </div>
           </div>

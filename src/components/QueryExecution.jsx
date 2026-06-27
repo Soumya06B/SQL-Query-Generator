@@ -1,28 +1,41 @@
-import { Play, Table as TableIcon } from "lucide-react";
-import { useState } from "react";
+import { Play, Table as TableIcon, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
-export function QueryExecution({ sql }) {
+export function QueryExecution({ sql, dbType = 'postgres' }) {
   const [isExecuting, setIsExecuting] = useState(false);
   const [results, setResults] = useState(null);
+  const [error, setError] = useState(null);
 
-  const handleExecute = () => {
+  useEffect(() => {
+    // Reset execution state if the active SQL query changes (like clicking an alternative)
+    setResults(null);
+    setError(null);
+  }, [sql]);
+
+  const handleExecute = async () => {
     setIsExecuting(true);
-    // Mock execution delay
-    setTimeout(() => {
-      setResults({
-        columns: ["user_id", "name", "email", "signup_date", "total_orders"],
-        rows: [
-          [1042, "Alex Chen", "alex@example.com", "2023-09-12", 5],
-          [2091, "Sarah Smith", "sarah.s@example.com", "2023-09-15", 4],
-          [3105, "Jordan Lee", "jlee88@example.com", "2023-09-18", 7],
-          [4420, "Taylor Swift", "taylor@example.com", "2023-09-21", 3],
-          [5199, "Casey Jones", "casey.j@example.com", "2023-09-25", 6],
-        ],
-        time: "124ms",
-        rowCount: 5
-      });
+    setError(null);
+    setResults(null);
+    try {
+      const response = await api.executeQuery(sql, dbType);
+      
+      if (response.status === 'success') {
+        setResults({
+          columns: response.columns,
+          // Backend returns rows as array of objects, map to array of arrays for rendering
+          rows: response.rows.map(rowObj => response.columns.map(col => rowObj[col])),
+          time: `${response.execution_time_ms.toFixed(2)}ms`,
+          rowCount: response.rows.length
+        });
+      } else {
+        setError(response.error || "Query execution failed.");
+      }
+    } catch (err) {
+      setError(err.response?.data?.detail || err.message || "An unexpected error occurred.");
+    } finally {
       setIsExecuting(false);
-    }, 1500);
+    }
   };
 
   return (
@@ -35,7 +48,7 @@ export function QueryExecution({ sql }) {
         <button
           onClick={handleExecute}
           disabled={isExecuting || !sql}
-          className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30"
+          className="btn-primary bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isExecuting ? (
             <>
@@ -50,6 +63,16 @@ export function QueryExecution({ sql }) {
           )}
         </button>
       </div>
+
+      {error && (
+        <div className="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-semibold mb-1">Execution Error</p>
+            <p>{error}</p>
+          </div>
+        </div>
+      )}
 
       {results && (
         <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -77,7 +100,7 @@ export function QueryExecution({ sql }) {
                   <tr key={rowIdx} className="hover:bg-gray-800/50 transition-colors">
                     {row.map((cell, cellIdx) => (
                       <td key={cellIdx} className="p-3 text-sm text-gray-300 whitespace-nowrap">
-                        {cell}
+                        {cell !== null && cell !== undefined ? String(cell) : <span className="text-gray-500 italic">null</span>}
                       </td>
                     ))}
                   </tr>

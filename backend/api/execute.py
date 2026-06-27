@@ -23,7 +23,7 @@ def execute_query(request: ExecuteQueryRequest, db: Session = Depends(get_db)):
         
     try:
         engine = db_connector.get_engine(request.db_type)
-        columns, rows, exec_time = execute_sql(engine, request.sql_query, settings.MAX_ROWS_RETURNED)
+        columns, rows, exec_time = execute_sql(engine, request.sql_query, request.db_type, settings.MAX_ROWS_RETURNED)
         return ExecuteQueryResponse(
             status="success",
             columns=columns,

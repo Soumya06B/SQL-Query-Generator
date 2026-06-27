@@ -7,6 +7,7 @@ class GenerateSQLRequest(BaseModel):
 
 class ExplainQueryRequest(BaseModel):
     sql_query: str = Field(..., description="The SQL query to explain")
+    db_type: str = Field("postgres", description="Target database type (e.g. postgres, mysql)")
 
 class ValidateQueryRequest(BaseModel):
     sql_query: str = Field(..., description="The SQL query to validate against syntax and schema")
@@ -14,6 +15,7 @@ class ValidateQueryRequest(BaseModel):
 
 class AnalyzeImpactRequest(BaseModel):
     sql_query: str = Field(..., description="The SQL query to analyze")
+    db_type: str = Field("postgres", description="Target database type (e.g. postgres, mysql)")
 
 class ExecuteQueryRequest(BaseModel):
     sql_query: str = Field(..., description="The fully validated SQL query to execute")

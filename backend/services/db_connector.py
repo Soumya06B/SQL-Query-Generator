@@ -39,11 +39,15 @@ class DatabaseConnector:
         
         schema = {}
         for table_name in inspector.get_table_names():
+            pk_constraint = inspector.get_pk_constraint(table_name)
+            pk_columns = pk_constraint.get("constrained_columns", []) if pk_constraint else []
+            
             columns = []
             for col in inspector.get_columns(table_name):
                 columns.append({
                     "name": col["name"],
-                    "type": str(col["type"])
+                    "type": str(col["type"]),
+                    "primary_key": col["name"] in pk_columns
                 })
             
             foreign_keys = inspector.get_foreign_keys(table_name)

@@ -1,68 +1,62 @@
 import { Database, Table, Key, Type, ChevronRight, Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import api from "../services/api";
 
-const mockSchemas = [
-  {
-    name: "public",
-    tables: [
-      {
-        name: "users",
-        rows: "1.2M",
-        size: "450 MB",
-        columns: [
-          { name: "id", type: "uuid", isPrimary: true },
-          { name: "email", type: "varchar(255)", isPrimary: false },
-          { name: "password_hash", type: "varchar(255)", isPrimary: false },
-          { name: "created_at", type: "timestamp", isPrimary: false },
-          { name: "status", type: "enum('active', 'inactive')", isPrimary: false },
-        ]
-      },
-      {
-        name: "orders",
-        rows: "8.5M",
-        size: "2.1 GB",
-        columns: [
-          { name: "id", type: "bigint", isPrimary: true },
-          { name: "user_id", type: "uuid", isPrimary: false, isForeign: true },
-          { name: "total_amount", type: "decimal(10,2)", isPrimary: false },
-          { name: "order_date", type: "timestamp", isPrimary: false },
-          { name: "status", type: "varchar(50)", isPrimary: false },
-        ]
-      },
-      {
-        name: "products",
-        rows: "45K",
-        size: "120 MB",
-        columns: [
-          { name: "id", type: "integer", isPrimary: true },
-          { name: "name", type: "varchar(255)", isPrimary: false },
-          { name: "price", type: "decimal(10,2)", isPrimary: false },
-          { name: "stock", type: "integer", isPrimary: false },
-        ]
-      }
-    ]
-  },
-  {
-    name: "analytics",
-    tables: [
-      {
-        name: "page_views",
-        rows: "45.2M",
-        size: "12.5 GB",
-        columns: [
-          { name: "id", type: "bigint", isPrimary: true },
-          { name: "path", type: "text", isPrimary: false },
-          { name: "visitor_id", type: "uuid", isPrimary: false },
-          { name: "timestamp", type: "timestamp", isPrimary: false },
-        ]
-      }
-    ]
-  }
-];
-
-export function SchemaExplorer() {
-  const [expandedTable, setExpandedTable] = useState("users");
+export function SchemaExplorer({ dbType = 'postgres' }) {
+  const [schemas, setSchemas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedTable, setExpandedTable] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    const fetchSchema = async () => {
+      try {
+        setLoading(true);
+        const data = await api.getDatabaseSchema(dbType);
+        
+        // Transform the backend { schema: { "table_name": { columns: [], foreign_keys: [] } } } format
+        // into the format expected by our UI: { name: "database_name", tables: [ { name, columns: [] } ] }
+        const backendSchema = data.schema || {};
+        const tables = Object.keys(backendSchema).map(tableName => {
+          const tableInfo = backendSchema[tableName];
+          
+          const fkColumns = new Set();
+          if (tableInfo.foreign_keys) {
+            tableInfo.foreign_keys.forEach(fk => {
+              fk.constrained_columns.forEach(col => fkColumns.add(col));
+            });
+          }
+
+          return {
+            name: tableName,
+            rows: "N/A",
+            size: "N/A",
+            columns: tableInfo.columns.map(c => ({
+              name: c.name,
+              type: c.type,
+              isPrimary: c.primary_key,
+              isForeign: fkColumns.has(c.name)
+            }))
+          };
+        });
+
+        setSchemas([{
+          name: "postgres", // Just a display name
+          tables: tables
+        }]);
+
+        if (tables.length > 0) {
+          setExpandedTable(tables[0].name);
+        }
+      } catch (err) {
+        console.error("Failed to load schema:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSchema();
+  }, [dbType]);
 
   return (
     <div className="flex gap-6 h-full">
@@ -80,7 +74,11 @@ export function SchemaExplorer() {
         </div>
 
         <div className="flex-1 overflow-y-auto glass-panel rounded-xl p-4 border border-gray-800 space-y-6">
-          {mockSchemas.map((schema) => (
+          {loading ? (
+            <div className="flex justify-center items-center h-32">
+              <div className="w-6 h-6 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+            </div>
+          ) : schemas.map((schema) => (
             <div key={schema.name} className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 <Database className="w-4 h-4 text-indigo-400" />
@@ -115,7 +113,7 @@ export function SchemaExplorer() {
       {/* Main Area for Columns */}
       <div className="flex-1 glass-panel rounded-xl border border-gray-800 p-6 flex flex-col">
         {expandedTable ? (() => {
-          const table = mockSchemas.flatMap(s => s.tables).find(t => t.name === expandedTable);
+          const table = schemas.flatMap(s => s.tables).find(t => t.name === expandedTable);
           if(!table) return null;
           
           return (

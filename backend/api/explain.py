@@ -7,5 +7,5 @@ router = APIRouter()
 
 @router.post("/explain-query", response_model=ExplainQueryResponse)
 def explain_query(request: ExplainQueryRequest):
-    explanation = explain_sql(request.sql_query)
+    explanation = explain_sql(request.sql_query, request.db_type)
     return ExplainQueryResponse(explanation=explanation)

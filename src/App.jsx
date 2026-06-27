@@ -8,26 +8,27 @@ import { Settings } from "./pages/Settings";
 
 function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [dbType, setDbType] = useState("postgres");
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <Dashboard />;
+        return <Dashboard dbType={dbType} />;
       case "query_generator":
-        return <QueryGenerator />;
+        return <QueryGenerator dbType={dbType} />;
       case "query_history":
-        return <QueryHistoryPage />;
+        return <QueryHistoryPage dbType={dbType} />;
       case "schema_explorer":
-        return <SchemaExplorer />;
+        return <SchemaExplorer dbType={dbType} />;
       case "settings":
         return <Settings />;
       default:
-        return <Dashboard />;
+        return <Dashboard dbType={dbType} />;
     }
   };
 
   return (
-    <Layout activeTab={activeTab} onTabChange={setActiveTab}>
+    <Layout activeTab={activeTab} onTabChange={setActiveTab} dbType={dbType} onDbTypeChange={setDbType}>
       {renderContent()}
     </Layout>
   );

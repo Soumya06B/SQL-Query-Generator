@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.post("/analyze-impact", response_model=AnalyzeImpactResponse)
 def analyze_impact(request: AnalyzeImpactRequest):
-    rows, cost, warnings = analyze_query_impact(request.sql_query)
+    rows, cost, warnings = analyze_query_impact(request.sql_query, request.db_type)
     return AnalyzeImpactResponse(
         estimated_rows=rows,
         cost_estimate=cost,

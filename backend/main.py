@@ -26,12 +26,12 @@ app.add_middleware(
 
 # Include API routers
 app.include_router(database.router, prefix="/api/database", tags=["Database Management"])
-app.include_router(generate_sql.router, tags=["SQL Generation"])
-app.include_router(explain.router, tags=["SQL Explanations"])
-app.include_router(impact.router, tags=["Query Impact"])
-app.include_router(validate.router, tags=["Validation"])
-app.include_router(execute.router, tags=["Execution"])
-app.include_router(history.router, tags=["History"])
+app.include_router(generate_sql.router, prefix="/api", tags=["SQL Generation"])
+app.include_router(explain.router, prefix="/api", tags=["SQL Explanations"])
+app.include_router(impact.router, prefix="/api", tags=["Query Impact"])
+app.include_router(validate.router, prefix="/api", tags=["Validation"])
+app.include_router(execute.router, prefix="/api", tags=["Execution"])
+app.include_router(history.router, prefix="/api", tags=["History"])
 
 @app.get("/")
 def read_root():

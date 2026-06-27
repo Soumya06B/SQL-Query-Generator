@@ -17,7 +17,9 @@ class Settings(BaseSettings):
     
     # Security / Rules
     ALLOW_EXECUTION: bool = True
+    ALLOWED_SQL_ACTIONS: list[str] = ["SELECT"] # Add "INSERT", "UPDATE", "DELETE" as needed
     MAX_ROWS_RETURNED: int = 100
+    QUERY_TIMEOUT_MS: int = 15000
 
     class Config:
         env_file = ".env"
