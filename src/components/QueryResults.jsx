@@ -1,4 +1,4 @@
-import { Check, Copy, Database, Info, Lightbulb, Zap } from "lucide-react";
+import { Check, Copy, Database, Info, Lightbulb, Zap, CheckCircle2, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 
 export function QueryResults({ result }) {
@@ -93,6 +93,36 @@ export function QueryResults({ result }) {
               </li>
             ))}
           </ul>
+        </div>
+        
+        <div className="glass-panel rounded-xl p-5 md:col-span-2">
+          <h4 className="flex items-center gap-2 text-gray-200 font-semibold mb-3">
+            {result.validation?.is_valid ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 text-red-400" />
+            )}
+            Validation Results
+          </h4>
+          <div className="space-y-2">
+            <div className="flex items-center text-sm">
+              <span className="text-gray-400 mr-2">Status:</span>
+              {result.validation?.is_valid ? (
+                <span className="text-emerald-400 font-medium bg-emerald-500/10 px-2 py-0.5 rounded">Valid Query</span>
+              ) : (
+                <span className="text-red-400 font-medium bg-red-500/10 px-2 py-0.5 rounded">Invalid Query</span>
+              )}
+            </div>
+            {!result.validation?.is_valid && result.validation?.errors?.length > 0 && (
+              <div className="mt-3 p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400">
+                <ul className="list-disc list-inside space-y-1">
+                  {result.validation.errors.map((err, idx) => (
+                    <li key={idx}>{err}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

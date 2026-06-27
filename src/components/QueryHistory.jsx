@@ -32,7 +32,7 @@ export function QueryHistory({ history, onSelect }) {
                 {item.prompt}
               </p>
               <p className="text-xs text-gray-500 font-mono truncate">
-                {item.sql}
+                {item.generated_sql || item.sql}
               </p>
             </div>
           </button>
